@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault - Admin Dashboard</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px;
+            font-family: Arial, sans-serif;
+            background: #f3f6fc;
+            color: #26344a;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .header, .table-box, .stats-box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+        }
+
+        h1 {
+            color: #1765d1;
+            margin-top: 0;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat {
+            background: #edf4ff;
+            padding: 18px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat h2 {
+            color: #1765d1;
+            margin: 5px 0;
+        }
+
+        .alert-box {
+            background: #fff0f0;
+            border-left: 5px solid #d93025;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+
+        .table-box {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 13px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #1765d1;
+            color: white;
+        }
+
+        .denied {
+            color: #c62828;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #238636;
+            font-weight: bold;
+        }
+
+        .promote-btn {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 9px 13px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .promote-btn:hover {
+            background: #176b2c;
+        }
+
+        .logout {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 11px 22px;
+            background: #1765d1;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 25px;
+            color: #777;
+        }
+
+        .message {
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            background: #e8f5e9;
+            color: #238636;
+        }
+
+        .error-message {
+            background: #fff0f0;
+            color: #c62828;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>TrustVault Admin Dashboard</h1>
+        <p>Security Monitoring and User Management</p>
+        <p>Welcome, {{ current_user.name }}!</p>
+        <p>Role: ADMIN</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="message {% if category == 'error' %}error-message{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <!-- User Statistics -->
+    <div class="stats-box">
+        <h2>User Statistics</h2>
+
+        <div class="stats">
+
+            <div class="stat">
+                <p>Total Users</p>
+                <h2>{{ total_users }}</h2>
+            </div>
+
+            <div class="stat">
+                <p>Admins</p>
+                <h2>{{ total_admins }}</h2>
+            </div>
+
+            <div class="stat">
+                <p>Owners</p>
+                <h2>{{ total_owners }}</h2>
+            </div>
+
+            <div class="stat">
+                <p>Viewers</p>
+                <h2>{{ total_viewers }}</h2>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- User Management -->
+    <div class="table-box">
+
+        <h2>User Management</h2>
+        <p>View registered users and promote VIEWER accounts to OWNER.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Current Role</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for user in users %}
+
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.role }}</td>
+
+                    <td>
+                        {% if user.role|lower == 'viewer' %}
+
+                            <form method="POST"
+                                  action="{{ url_for('admin.promote_owner', user_id=user.id) }}">
+
+                                <button type="submit" class="promote-btn">
+                                    Promote to OWNER
+                                </button>
+
+                            </form>
+
+                        {% elif user.role|lower == 'owner' %}
+
+                            <span class="success">OWNER</span>
+
+                        {% else %}
+
+                            <span>ADMIN</span>
+
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="5" class="empty">
+                        No registered users found.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+        </table>
+
+    </div>
+
+    <!-- Security Alerts -->
+    <h2>Security Alerts</h2>
+
+    <div class="alert-box">
+        <strong>Security Monitoring:</strong>
+        Review denied login attempts and unauthorized access activities.
+    </div>
+
+    <div class="table-box">
+
+        <h3>Recent Security Activities</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User ID</th>
+                    <th>Action</th>
+                    <th>Outcome</th>
+                    <th>Details</th>
+                    <th>Date & Time</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for alert in security_alerts %}
+
+                <tr>
+                    <td>{{ alert.id }}</td>
+                    <td>{{ alert.actor_id or 'Unknown' }}</td>
+                    <td>{{ alert.action }}</td>
+                    <td class="denied">{{ alert.outcome }}</td>
+                    <td>{{ alert.details }}</td>
+                    <td>{{ alert.created_at or 'Not available' }}</td>
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="6" class="empty">
+                        No security alerts found.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+        </table>
+
+    </div>
+
+    <a href="{{ url_for('auth.logout') }}" class="logout">
+        Logout
+    </a>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,28 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment secrets
+.env
+.env.*
+
+# Private uploaded documents
+instance/private_documents/
+
+# Local database and logs
+*.log
+
+# IDE settings
+.vscode/
+.idea/
+
+# Test cache
+.pytest_cache/
+.refact/

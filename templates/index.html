@@ -1,0 +1,249 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault | Secure Document Sharing</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap"
+          rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <a href="/" class="brand">
+            <span class="brand-shield"><i class="fa-solid fa-lock"></i></span>
+            <span>Trust<span class="blue">Vault</span></span>
+        </a>
+
+        <nav class="nav-links">
+            <a href="/" class="active"><i class="fa-solid fa-house"></i> Home</a>
+            <a href="#about"><i class="fa-solid fa-circle-info"></i> About</a>
+            <a href="#features"><i class="fa-solid fa-star"></i> Features</a>
+            <a href="#contact"><i class="fa-solid fa-envelope"></i> Contact</a>
+        </nav>
+
+        <div class="nav-actions">
+            <a href="/login" class="login-btn">
+                <i class="fa-solid fa-right-to-bracket"></i> Login
+            </a>
+            <a href="/register" class="register-btn">
+                <i class="fa-solid fa-user-plus"></i> Register
+            </a>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <main class="hero">
+
+        <section class="hero-content">
+            <div class="trust-label">
+                <i class="fa-solid fa-shield-halved"></i>
+                Secure · Reliable · Trusted
+            </div>
+
+            <h1>
+                Welcome to<br>
+                <span class="trust-name">TrustVault</span>
+            </h1>
+
+            <div class="title-underline"></div>
+
+            <h2>Secure Document Sharing System</h2>
+
+            <p class="hero-description">
+                Protecting your documents with advanced security,
+                role-based access control and seamless sharing.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="/register" class="primary-btn">
+                    <i class="fa-solid fa-rocket"></i>
+                    Get Started
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+                <a href="#features" class="secondary-btn">
+                    <i class="fa-solid fa-play"></i>
+                    Learn More
+                </a>
+            </div>
+
+            <p class="hero-note">
+                Your documents. Your permissions. Your control.
+            </p>
+        </section>
+
+        <!-- RIGHT SIDE ILLUSTRATION -->
+        <section class="hero-visual">
+
+            <div class="dot-pattern"></div>
+
+            <div class="glow-circle"></div>
+
+            <!-- Orbit rings -->
+            <div class="orbit orbit-back"></div>
+            <div class="orbit orbit-front"></div>
+
+            <!-- Floating document icons -->
+            <div class="floating-file image-file">
+                <i class="fa-regular fa-image"></i>
+            </div>
+
+            <div class="floating-file pdf-file">
+                <i class="fa-solid fa-file-pdf"></i>
+            </div>
+
+            <div class="floating-file word-file">
+                <i class="fa-solid fa-file-word"></i>
+            </div>
+
+            <div class="floating-file excel-file">
+                <i class="fa-solid fa-file-excel"></i>
+            </div>
+
+            <!-- Main shield -->
+            <div class="shield-container">
+                <svg class="shield-svg" viewBox="0 0 260 300"
+                     xmlns="http://www.w3.org/2000/svg">
+
+                    <defs>
+                        <linearGradient id="shieldGradient"
+                            x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#55b9ff"/>
+                            <stop offset="40%" stop-color="#0866df"/>
+                            <stop offset="100%" stop-color="#001e70"/>
+                        </linearGradient>
+
+                        <linearGradient id="lockGradient"
+                            x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="100%" stop-color="#b8d9ff"/>
+                        </linearGradient>
+                    </defs>
+
+                    <path d="M130 8 L238 55 L225 170
+                             Q210 255 130 290
+                             Q50 255 35 170 L22 55 Z"
+                          fill="#003d9b"
+                          stroke="#7ecbff"
+                          stroke-width="8"/>
+
+                    <path d="M130 20 L225 62 L213 165
+                             Q200 240 130 275
+                             Q60 240 47 165 L35 62 Z"
+                          fill="url(#shieldGradient)"
+                          stroke="#1689ff"
+                          stroke-width="5"/>
+
+                    <path d="M130 20 L130 275
+                             Q200 240 213 165 L225 62 Z"
+                          fill="#001f75"
+                          opacity="0.35"/>
+
+                    <!-- Lock -->
+                    <rect x="91" y="130" width="78" height="75"
+                          rx="12" fill="url(#lockGradient)"/>
+
+                    <path d="M105 132 V105
+                             A25 25 0 0 1 155 105 V132"
+                          fill="none"
+                          stroke="#e6f4ff"
+                          stroke-width="13"
+                          stroke-linecap="round"/>
+
+                    <circle cx="130" cy="162" r="12" fill="#073b8a"/>
+                    <path d="M126 170 L134 170 L132 188 L128 188 Z"
+                          fill="#073b8a"/>
+                </svg>
+            </div>
+
+            <!-- Pedestal -->
+            <div class="pedestal-top"></div>
+            <div class="pedestal-base"></div>
+
+            <div class="priority-text">
+                Your Data, Our Priority
+                <span></span>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- FEATURES -->
+    <section class="features-section" id="features">
+
+        <div class="feature-card">
+            <div class="feature-icon secure-icon">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3>Secure Access</h3>
+            <p>Share documents safely<br>with controlled permissions.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon role-icon">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <h3>Role-Based Control</h3>
+            <p>Manage access for Admin,<br>Owners and Viewers.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon sharing-icon">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <h3>Easy Sharing</h3>
+            <p>Share files effortlessly<br>with trusted users.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon tracking-icon">
+                <i class="fa-solid fa-chart-column"></i>
+            </div>
+            <h3>Activity Tracking</h3>
+            <p>Monitor all activities<br>with detailed logs.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon protection-icon">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3>Data Protection</h3>
+            <p>Your files are always<br>protected and private.</p>
+        </div>
+
+    </section>
+
+    <!-- ABOUT -->
+    <section class="about-section" id="about">
+        <span class="section-label">ABOUT TRUSTVAULT</span>
+        <h2>Security You Can Trust</h2>
+        <p>
+            TrustVault is a secure document sharing system designed
+            to protect confidential files through controlled access,
+            role-based permissions and transparent activity tracking.
+        </p>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="contact-section" id="contact">
+        <h2>Share Documents with Confidence</h2>
+        <p>Your documents deserve security and control.</p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>© 2026 TrustVault. Secure Document Sharing System.</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault - Login</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .flash-message {
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .flash-message.error {
+            background-color: #ffe5e5;
+            color: #c62828;
+            border: 1px solid #e0a0a0;
+        }
+
+        .flash-message.success {
+            background-color: #e5f7e9;
+            color: #237a36;
+            border: 1px solid #a5d6ad;
+        }
+
+        #admin-code-section {
+            margin-top: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-page">
+        <div class="login-box">
+
+            <h1>Welcome Back!</h1>
+            <p>Login to your TrustVault account</p>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+
+                <label>Email:</label>
+                <input type="email" name="email"
+                       placeholder="Enter your email" required>
+
+                <label>Password:</label>
+                <input type="password" name="password"
+                       placeholder="Enter your password" required>
+
+                <label>Login As:</label>
+
+                <select name="login_type" id="login_type" required>
+                    <option value="viewer">Viewer</option>
+                    <option value="admin">Admin</option>
+                </select>
+
+                <!-- Admin Security Code -->
+                <div id="admin-code-section" style="display: none;">
+
+                    <label>Admin Security Code:</label>
+
+                    <input type="password"
+                           name="admin_code"
+                           id="admin_code"
+                           placeholder="Enter admin security code">
+
+                </div>
+
+                <button type="submit">Login</button>
+
+            </form>
+
+            <p>Don't have an account?
+                <a href="{{ url_for('auth.register') }}">Register here</a>
+            </p>
+
+        </div>
+    </div>
+
+    <script>
+        const loginType = document.getElementById("login_type");
+        const codeSection = document.getElementById("admin-code-section");
+        const adminCode = document.getElementById("admin_code");
+
+        function toggleAdminCode() {
+
+            if (loginType.value === "admin") {
+
+                codeSection.style.display = "block";
+                adminCode.required = true;
+
+            } else {
+
+                codeSection.style.display = "none";
+                adminCode.required = false;
+                adminCode.value = "";
+
+            }
+        }
+
+        // Run whenever Viewer/Admin selection changes
+        loginType.addEventListener("change", toggleAdminCode);
+
+        // Check selection when page loads
+        toggleAdminCode();
+    </script>
+
+</body>
+</html>
