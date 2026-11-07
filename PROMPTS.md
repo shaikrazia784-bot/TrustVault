@@ -2,104 +2,270 @@
 
 ## 1. Project Overview
 
-TrustVault is a secure document-sharing application developed using Python Flask and MySQL.
+TrustVault is a secure document-sharing application developed using Python Flask and MySQL/TiDB.
 
-The main objective is to ensure that only authorized users can access shared documents and that important document activities are recorded in an audit trail.
+The main objective is to ensure that documents are accessible only to authorized users while maintaining a reliable audit trail of important activities.
 
-The application supports role-based access control, secure document storage, document sharing, version management and audit logging.
+The application supports role-based access control, document ownership, permission-based sharing, document version management, database-backed file storage and audit logging.
+
+This document describes how AI assistance was used during development, the issues identified, the corrections made and the testing performed.
 
 ## 2. Technologies Used
 
-- Python
+- Python 3.12
 - Flask
-- MySQL
 - Flask-SQLAlchemy
 - Flask-Login
+- MySQL / TiDB
 - HTML, CSS and JavaScript
 - Git and GitHub
+- Render
 
-## 3. AI Assistance
+## 3. AI-Assisted Development Log
 
-AI assistance was used during development for:
+### Entry 1 – Authentication and Admin Authorization
 
-- Understanding Flask application structure and routing.
-- Writing and reviewing Python code.
-- Implementing authentication and role-based access control.
-- Designing database models and relationships.
-- Debugging application errors.
-- Implementing document upload, download and sharing functionality.
-- Implementing document version management.
-- Developing audit logging and hash verification.
-- Improving the user interface.
-- Preparing project documentation.
+**Date:** 2026-11-07
 
-All generated code was reviewed and tested during development.
+**What I asked AI:**
 
-## 4. Development Decisions and Corrections
+Help implement secure login and role-based authorization. Selecting Admin during login or entering an admin security code must not grant administrator access unless the authenticated account actually has the ADMIN role in the database.
 
-- All newly registered users receive the VIEWER role by default.
-- Only ADMIN users can promote selected users to OWNER.
-- Admin privileges depend on the actual database role, not merely on selecting Admin during login.
-- A non-admin user must be denied admin access even if the correct admin security code is entered.
-- Unauthorized admin access attempts are recorded in the audit log.
-- Existing database tables and records must be preserved.
-- Private documents must not be stored in the public static folder.
+**What AI produced:**
+
+Authentication and role-checking logic, admin route restrictions and unauthorized access logging.
+
+**Issue identified:**
+
+A login selection or correct security code alone must not be treated as proof of administrator authorization.
+
+**My correction and verification:**
+
+I required administrator access to depend on the authenticated user's actual database role. I tested a VIEWER account attempting Admin login with the correct security code. Access was denied and the attempt was recorded in the audit log.
+
+**Result:** Unauthorized admin access test passed.
+
+**Related commit:**
+
+https://github.com/shaikrazia784-bot/TrustVault/commit/ba50e4f
+
+### Entry 2 – Default Roles and Owner Promotion
+
+**Date:** 2026-11-07
+
+**What I asked AI:**
+
+Implement a role model in which new registrations receive VIEWER by default and only an ADMIN can promote selected users to OWNER.
+
+**What AI produced:**
+
+Registration role handling and administrator-controlled role promotion logic.
+
+**Issue identified:**
+
+Ordinary users must not be able to assign themselves privileged roles during registration.
+
+**My correction and verification:**
+
+I retained VIEWER as the default registration role and restricted OWNER promotion to administrators. I tested new registration and ADMIN promotion of a user to OWNER.
+
+**Result:** Default VIEWER registration and ADMIN promotion tests passed.
+
+**Related commit:**
+
+https://github.com/shaikrazia784-bot/TrustVault/commit/ba50e4f
+
+### Entry 3 – Document Permissions and Version Management
+
+**Date:** 2026-11-07
+
+**What I asked AI:**
+
+Implement document sharing where owners can grant READ or EDIT permissions. VIEWER users with READ access should be able to download but not edit. New edited documents must be stored as separate versions.
+
+**What AI produced:**
+
+Document-sharing routes, permission checks, revocation and version-management functionality.
+
+**Issue identified:**
+
+READ users must not be allowed to edit documents, and revoked permissions must no longer grant access.
+
+**My correction and verification:**
+
+I tested owner upload, sharing with a VIEWER, viewer download, permission revocation and an EDIT user's new-version upload. The new version appeared as Version 1.
+
+**Result:** Upload, sharing, download, revocation and edited-version upload tests passed. Original-document preservation should be independently checked before claiming that specific behavior as verified.
+
+**Related commit:**
+
+https://github.com/shaikrazia784-bot/TrustVault/commit/ba50e4f
+
+### Entry 4 – Audit Trail and Tampering Detection
+
+**Date:** 2026-11-07
+
+**What I asked AI:**
+
+Implement audit logging for important document activities and use SHA-256 hash chaining to help detect modifications to historical audit records.
+
+**What AI produced:**
+
+Audit-event logging, hash-chain verification logic and a tampering simulation test.
+
+**Issue identified:**
+
+Recording events alone is insufficient. The audit verification process must also detect changes to recorded events.
+
+**My correction and verification:**
+
+I reviewed the verification approach and executed the tampering test using:
+
+`python -m pytest -v test_audit_tampering.py`
+
+**Test result:**
+
+`1 passed in 4.85s`
+
+**Result:** Audit tampering simulation test passed.
+
+**Related commit:**
+
+https://github.com/shaikrazia784-bot/TrustVault/commit/ba50e4f
+
+### Entry 5 – Persistent Document Storage
+
+**Date:** 2026-11-07
+
+**What I asked AI:**
+
+Fix document downloads on the deployed Render application. Files stored only on the hosting server's local filesystem were not persistent across restarts or deployments.
+
+**What AI produced:**
+
+A database-backed storage approach using binary columns for document and document-version contents, together with database-based download handling.
+
+**Issue identified:**
+
+The Render filesystem is ephemeral, so previously uploaded documents could become unavailable after a restart or deployment.
+
+**My correction and verification:**
+
+I updated the document models and upload/download routes to store file contents in database binary columns. I also restored existing document records and tested downloads.
+
+**Result:** PDF, DOCX, JPG and PNG upload/download workflows were successfully tested.
+
+**Related commit:**
+
+https://github.com/shaikrazia784-bot/TrustVault/commit/6513bca
+
+### Entry 6 – Production Deployment and Debugging
+
+**Date:** 2026-11-07
+
+**What I asked AI:**
+
+Help deploy TrustVault on Render using Gunicorn and troubleshoot production issues related to application startup, database connectivity and document downloads.
+
+**What AI produced:**
+
+Deployment configuration guidance, Gunicorn setup, diagnostic logging and debugging suggestions for production errors.
+
+**Issue identified:**
+
+The application worked locally, but production deployment introduced additional challenges, including startup configuration, database connection errors and document download failures.
+
+**My correction and verification:**
+
+I configured Gunicorn for production, reviewed Render deployment logs, investigated download errors and corrected the document storage approach to use database-backed binary storage.
+
+I verified that the deployed application opened and that document upload and download workflows worked after the storage correction.
+
+**Result:** Render deployment is live and the tested document workflows are working.
+
+**Related commits:**
+
+- https://github.com/shaikrazia784-bot/TrustVault/commit/ec70e53
+- https://github.com/shaikrazia784-bot/TrustVault/commit/ac9a4ea
+- https://github.com/shaikrazia784-bot/TrustVault/commit/6513bca
+
+## 4. Important Security Decisions
+
+- New registrations receive the VIEWER role by default.
+- Only ADMIN users can promote users to OWNER.
+- Admin authorization depends on the authenticated user's database role.
+- A correct admin security code alone cannot grant administrator access.
 - VIEWER users can access only documents shared with them.
-- OWNER users can grant and revoke READ or EDIT permissions.
-- Edited documents are stored as separate versions without replacing the original document.
+- READ permission allows downloading but not editing.
+- EDIT permission is granted by the document owner.
+- Owners can revoke previously granted permissions.
+- Document updates are stored as separate versions.
+- Unauthorized access attempts are recorded in the audit trail.
+- Existing database tables and records were preserved during file-storage changes.
 
 ## 5. Implemented Features and Testing
 
-- Flask application structure: Implemented.
-- Database configuration: Implemented and connection tested.
-- User registration and login: Implemented and tested.
-- Default VIEWER registration: Tested.
-- Role-based dashboards: Implemented.
-- Admin access verification: Implemented and tested.
-- OWNER document upload: Tested.
-- Secure document download: Tested.
-- Document replacement: Implemented and tested.
-- Document sharing with READ and EDIT permissions: Tested.
-- Permission revocation: Tested.
-- Unauthorized document download prevention: Tested.
-- VIEWER edited-version upload: Tested successfully.
-- Document version database storage: Verified.
-- Audit logging for document activities: Tested.
-- SHA-256 audit hash-chain verification: Tested.
-- Audit tampering detection simulation: Tested.
+| Feature | Test Status |
+|---|---|
+| User registration and login | Tested |
+| Default VIEWER registration | Tested |
+| Admin authorization | Tested |
+| ADMIN promotion to OWNER | Tested |
+| OWNER document upload | Tested |
+| Document download | Tested |
+| READ and EDIT permissions | Tested |
+| Permission revocation | Tested |
+| Edited-version upload | Tested |
+| Audit event visibility | Checked |
+| SHA-256 tampering simulation | Passed |
+| PDF upload and download | Tested |
+| DOCX upload and download | Tested |
+| JPG upload and download | Tested |
+| PNG upload and download | Tested |
+| Database-backed file storage | Tested |
 
-## 6. Audit Trail
+## 6. Audit Trail Design
 
-The application records important activities, including:
+TrustVault records important activities, including:
 
-- Document upload and download.
-- Document updates.
+- Document uploads and downloads.
+- Document updates and version uploads.
 - Document sharing and permission changes.
 - Permission revocation.
-- Edited document version uploads.
 - Unauthorized access attempts.
 
-A SHA-256 hash-chain mechanism is implemented to help detect changes to recorded audit events.
+A SHA-256 hash-chain mechanism links audit events using previous and current event hashes. The tampering simulation test was executed successfully.
 
-The audit-chain verification script and a tampering simulation were executed successfully during local testing.
+This mechanism helps detect modifications during verification. It should not be considered protection against every possible privileged database-level attack.
 
-## 7. Development and Testing Approach
+## 7. Development Approach and Lessons Learned
 
-The project was developed step by step.
+The project was developed incrementally rather than as a single generated solution.
 
-Each major feature was implemented, reviewed and tested locally. Database records and audit logs were checked to verify important operations.
+My development approach included:
 
-Errors discovered during development were corrected and the affected functionality was tested again.
+1. Understanding user roles and security requirements.
+2. Implementing authentication and authorization.
+3. Testing authorized and unauthorized access scenarios.
+4. Implementing document sharing and version management.
+5. Reviewing audit events and hash verification.
+6. Debugging deployment-specific storage issues.
+7. Retesting affected functionality after corrections.
 
-## 8. Remaining Submission Tasks
+An important lesson was that a feature appearing to work is not sufficient. Authorization must be tested using different user roles, and document access must be verified after permission changes.
 
-- Review and finalize project documentation.
-- Prepare the public GitHub repository.
-- Verify that private files and credentials are excluded from GitHub.
-- Deploy the application to a suitable hosting platform.
-- Configure production database and environment variables.
-- Perform final testing on the deployed application.
+AI assistance helped accelerate implementation and debugging, but its suggestions were reviewed and tested rather than accepted blindly.
 
-## 9. Important Note
+## 8. Deployment and Submission Status
 
-This document reflects the development and testing progress at the time of submission preparation. Local testing results do not by themselves establish production deployment or production security readiness.
+- Live application: https://trustvault-df6q.onrender.com
+- GitHub repository: https://github.com/shaikrazia784-bot/TrustVault
+- Render deployment: Live.
+- Database-backed document storage: Implemented and tested.
+- Final repository visibility, secret-file review, README, THREATS.md and submission-form checks: Pending.
+
+## 9. Transparency Statement
+
+AI tools were used during development for code assistance, debugging, implementation suggestions and documentation.
+
+This log summarizes the development discussions and actual testing evidence available. It does not claim that AI independently built or verified the entire application. Features that have not been tested are identified as pending rather than described as completed.
