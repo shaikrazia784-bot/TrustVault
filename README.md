@@ -77,7 +77,7 @@ TrustVault/
 ### Step 1: Clone the Repository
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+ git clone https://github.com/shaikrazia784-bot/TrustVault.git
 cd TrustVault
 ```
 
@@ -131,6 +131,6 @@ See [PROMPTS.md](PROMPTS.md) for information about AI assistance, development de
 - Production deployment requires appropriate security configuration, validation and testing.
 - The local testing results do not represent production security certification.
 ## Project Status
-Core application features have been implemented and tested locally. Public repository preparation and production deployment are separate remaining submission tasks.
+Core application features have been implemented and tested locally.The GitHub repository is maintained as a private repository for the submission period. Production deployment and live-environment testing remain to be completed.
 ---
 TrustVault – Secure Documents. Controlled Access. Trusted Audit Trail.
