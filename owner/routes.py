@@ -1,10 +1,10 @@
 
-import os
 import uuid
+from io import BytesIO
 
 from flask import (
     Blueprint, request, redirect, url_for,
-    flash, current_app, send_from_directory, abort
+    flash, current_app, send_file, abort
 )
 
 from flask_login import login_required, current_user
@@ -48,30 +48,22 @@ def allowed_file(filename):
     )
 
 
-def private_folder():
-    folder = os.path.join(
-        current_app.instance_path,
-        "private_documents"
-    )
-    os.makedirs(folder, exist_ok=True)
-    return folder
-
-
-def save_uploaded_file(file):
-    original_name = secure_filename(file.filename)
+# READ UPLOADED FILE INTO MEMORY
+def read_uploaded_file(file):
+    original_name = secure_filename(file.filename or "")
 
     if not original_name or not allowed_file(original_name):
-        return None, None
+        return None, None, None
+
+    file_data = file.read()
+
+    if not file_data:
+        return None, None, None
 
     extension = original_name.rsplit(".", 1)[1].lower()
     storage_key = f"{uuid.uuid4().hex}.{extension}"
 
-    folder = private_folder()
-    file_path = os.path.join(folder, storage_key)
-
-    file.save(file_path)
-
-    return storage_key, original_name
+    return storage_key, original_name, file_data
 
 
 # DASHBOARD DATA
@@ -138,13 +130,11 @@ def upload_document():
         flash("Please select a document.", "error")
         return redirect(url_for("dashboard"))
 
-    storage_key, original_name = save_uploaded_file(file)
+    storage_key, original_name, file_data = read_uploaded_file(file)
 
     if not storage_key:
-        flash("Invalid file type.", "error")
+        flash("Invalid or empty file.", "error")
         return redirect(url_for("dashboard"))
-
-    file_path = os.path.join(private_folder(), storage_key)
 
     try:
         document = Document(
@@ -152,7 +142,8 @@ def upload_document():
             title=original_name,
             storage_key=storage_key,
             mime_type=file.mimetype,
-            file_size=os.path.getsize(file_path)
+            file_size=len(file_data),
+            file_data=file_data
         )
 
         db.session.add(document)
@@ -171,10 +162,6 @@ def upload_document():
 
     except Exception:
         db.session.rollback()
-
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
         current_app.logger.exception("Document upload failed")
         flash("Document upload failed.", "error")
 
@@ -200,21 +187,18 @@ def replace_document(document_id):
         flash("Please select a replacement file.", "error")
         return redirect(url_for("dashboard"))
 
-    new_key, original_name = save_uploaded_file(file)
+    new_key, original_name, file_data = read_uploaded_file(file)
 
     if not new_key:
-        flash("Invalid file type.", "error")
+        flash("Invalid or empty file.", "error")
         return redirect(url_for("dashboard"))
-
-    new_path = os.path.join(private_folder(), new_key)
-    old_key = document.storage_key
-    old_path = os.path.join(private_folder(), old_key)
 
     try:
         document.title = original_name
         document.storage_key = new_key
         document.mime_type = file.mimetype
-        document.file_size = os.path.getsize(new_path)
+        document.file_size = len(file_data)
+        document.file_data = file_data
 
         log_event(
             document.id,
@@ -225,17 +209,10 @@ def replace_document(document_id):
 
         db.session.commit()
 
-        if os.path.exists(old_path):
-            os.remove(old_path)
-
         flash("Document replaced successfully!", "success")
 
     except Exception:
         db.session.rollback()
-
-        if os.path.exists(new_path):
-            os.remove(new_path)
-
         current_app.logger.exception("Document replacement failed")
         flash("Document replacement failed.", "error")
 
@@ -252,6 +229,7 @@ def share_document():
 
     document_id = request.form.get("document_id", type=int)
     user_id = request.form.get("user_id", type=int)
+
     access_level = (
         request.form.get("access_level", "READ")
         .strip()
@@ -284,15 +262,18 @@ def share_document():
 
     try:
         if permission:
-            old_level = permission.access_level
+            old_active = permission.is_active
+
             permission.access_level = access_level
             permission.is_active = True
+            permission.granted_by = current_user.id
 
             action = (
                 "DOCUMENT_SHARED"
-                if not old_level
+                if not old_active
                 else "DOCUMENT_ACCESS_UPDATED"
             )
+
         else:
             permission = DocumentPermission(
                 document_id=document_id,
@@ -368,7 +349,7 @@ def revoke_access(permission_id):
     return redirect(url_for("dashboard"))
 
 
-# DOWNLOAD DOCUMENT
+# DOWNLOAD DOCUMENT - OWNER AND AUTHORIZED VIEWER
 @owner.route("/download/<int:document_id>")
 @login_required
 def download_document(document_id):
@@ -408,34 +389,34 @@ def download_document(document_id):
     else:
         abort(403)
 
-    file_path = os.path.join(
-        private_folder(),
-        document.storage_key
-    )
-
-    # DIAGNOSTIC LOG: Check whether uploaded file exists
-    if not os.path.isfile(file_path):
+    if not document.file_data:
         current_app.logger.error(
-            "DOWNLOAD FILE MISSING: document_id=%s",
+            "DOCUMENT DATA MISSING: document_id=%s",
             document.id
         )
         abort(404)
 
-    log_event(
-        document.id,
-        "DOCUMENT_DOWNLOAD",
-        "SUCCESS",
-        f"Document downloaded: {document.title}"
-    )
+    try:
+        log_event(
+            document.id,
+            "DOCUMENT_DOWNLOAD",
+            "SUCCESS",
+            f"Document downloaded: {document.title}"
+        )
 
-    db.session.commit()
+        db.session.commit()
 
-    return send_from_directory(
-        private_folder(),
-        document.storage_key,
-        as_attachment=True,
-        download_name=document.title
-    )
+        return send_file(
+            BytesIO(bytes(document.file_data)),
+            mimetype=document.mime_type or "application/octet-stream",
+            as_attachment=True,
+            download_name=document.title
+        )
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Document download failed")
+        raise
 
 
 # VIEWER UPLOAD EDITED DOCUMENT
@@ -472,13 +453,11 @@ def upload_edited_version(document_id):
         flash("Please select your edited document.", "error")
         return redirect(url_for("dashboard"))
 
-    storage_key, original_name = save_uploaded_file(file)
+    storage_key, original_name, file_data = read_uploaded_file(file)
 
     if not storage_key:
-        flash("Invalid file type.", "error")
+        flash("Invalid or empty file.", "error")
         return redirect(url_for("dashboard"))
-
-    file_path = os.path.join(private_folder(), storage_key)
 
     try:
         latest_version = (
@@ -496,7 +475,8 @@ def upload_edited_version(document_id):
             title=original_name,
             storage_key=storage_key,
             mime_type=file.mimetype,
-            file_size=os.path.getsize(file_path)
+            file_size=len(file_data),
+            file_data=file_data
         )
 
         db.session.add(version)
@@ -517,10 +497,6 @@ def upload_edited_version(document_id):
 
     except Exception:
         db.session.rollback()
-
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
         current_app.logger.exception("Edited version upload failed")
         flash("Unable to upload edited document.", "error")
 
@@ -555,26 +531,31 @@ def download_version(version_id):
     else:
         abort(403)
 
-    file_path = os.path.join(
-        private_folder(),
-        version.storage_key
-    )
-
-    if not os.path.isfile(file_path):
+    if not version.file_data:
+        current_app.logger.error(
+            "VERSION DATA MISSING: version_id=%s",
+            version.id
+        )
         abort(404)
 
-    log_event(
-        document.id,
-        "DOCUMENT_VERSION_DOWNLOAD",
-        "SUCCESS",
-        f"Version {version.version_number} downloaded."
-    )
+    try:
+        log_event(
+            document.id,
+            "DOCUMENT_VERSION_DOWNLOAD",
+            "SUCCESS",
+            f"Version {version.version_number} downloaded."
+        )
 
-    db.session.commit()
+        db.session.commit()
 
-    return send_from_directory(
-        private_folder(),
-        version.storage_key,
-        as_attachment=True,
-        download_name=version.title
-    )
+        return send_file(
+            BytesIO(bytes(version.file_data)),
+            mimetype=version.mime_type or "application/octet-stream",
+            as_attachment=True,
+            download_name=version.title
+        )
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Version download failed")
+        raise

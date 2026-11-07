@@ -63,6 +63,9 @@ class Document(db.Model):
     mime_type = db.Column(db.String(100), nullable=True)
     file_size = db.Column(db.BigInteger, nullable=True)
 
+    # Store actual document bytes in the database
+    file_data = db.Column(db.LargeBinary, nullable=True)
+
     created_at = db.Column(
         db.DateTime,
         server_default=db.func.current_timestamp()
@@ -133,6 +136,8 @@ class AuditLog(db.Model):
         db.DateTime,
         server_default=db.func.current_timestamp()
     )
+
+
 # DOCUMENT VERSION MODEL
 class DocumentVersion(db.Model):
     __tablename__ = "document_versions"
@@ -157,6 +162,9 @@ class DocumentVersion(db.Model):
     storage_key = db.Column(db.String(255), unique=True, nullable=False)
     mime_type = db.Column(db.String(100), nullable=True)
     file_size = db.Column(db.BigInteger, nullable=True)
+
+    # Store edited version bytes in the database
+    file_data = db.Column(db.LargeBinary, nullable=True)
 
     created_at = db.Column(
         db.DateTime,
