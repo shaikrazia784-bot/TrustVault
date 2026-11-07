@@ -225,7 +225,6 @@ def replace_document(document_id):
 
         db.session.commit()
 
-        # Delete old file only after successful database commit
         if os.path.exists(old_path):
             os.remove(old_path)
 
@@ -414,7 +413,12 @@ def download_document(document_id):
         document.storage_key
     )
 
+    # DIAGNOSTIC LOG: Check whether uploaded file exists
     if not os.path.isfile(file_path):
+        current_app.logger.error(
+            "DOWNLOAD FILE MISSING: document_id=%s",
+            document.id
+        )
         abort(404)
 
     log_event(
@@ -435,10 +439,7 @@ def download_document(document_id):
 
 
 # VIEWER UPLOAD EDITED DOCUMENT
-@owner.route(
-    "/edit-upload/<int:document_id>",
-    methods=["POST"]
-)
+@owner.route("/edit-upload/<int:document_id>", methods=["POST"])
 @login_required
 def upload_edited_version(document_id):
 
@@ -447,7 +448,6 @@ def upload_edited_version(document_id):
 
     document = Document.query.get_or_404(document_id)
 
-    # Verify active EDIT permission
     permission = DocumentPermission.query.filter_by(
         document_id=document.id,
         user_id=current_user.id,
@@ -481,7 +481,6 @@ def upload_edited_version(document_id):
     file_path = os.path.join(private_folder(), storage_key)
 
     try:
-        # Find latest version number
         latest_version = (
             db.session.query(db.func.max(DocumentVersion.version_number))
             .filter_by(document_id=document.id)
