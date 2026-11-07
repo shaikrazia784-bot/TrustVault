@@ -16,10 +16,13 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
 
-    from models import User
+    # Import all models
+    from models import User, DocumentVersion
+
+    # Import Blueprints and dashboard data function
     from auth.routes import auth
     from admin.routes import admin
-    from owner.routes import owner
+    from owner.routes import owner, inject_dashboard_data
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -30,6 +33,10 @@ def create_app():
     app.register_blueprint(admin)
     app.register_blueprint(owner)
 
+    # Create only missing database tables
+    with app.app_context():
+        db.create_all()
+
     @app.route("/")
     def home():
         return render_template("index.html")
@@ -39,12 +46,26 @@ def create_app():
     @login_required
     def dashboard():
 
-        user_role = (current_user.role or "").strip().lower()
+        user_role = (current_user.role or "").strip().upper()
 
-        if user_role == "admin":
+        if user_role == "ADMIN":
             return redirect(url_for("admin.dashboard"))
 
-        return render_template("dashboard.html", user=current_user)
+        (
+            my_documents,
+            viewers,
+            shared_permissions,
+            shared_documents
+        ) = inject_dashboard_data()
+
+        return render_template(
+            "dashboard.html",
+            user=current_user,
+            my_documents=my_documents,
+            viewers=viewers,
+            shared_permissions=shared_permissions,
+            shared_documents=shared_documents
+        )
 
     # Database Connection Check
     @app.route("/db-check")

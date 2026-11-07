@@ -19,3 +19,15 @@ class Config:
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Maximum uploaded file size: 10 MB
+    MAX_CONTENT_LENGTH = 10 * 1024 * 1024
+
+    # Session security
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+
+    # Enable only when HTTPS is configured in production
+    SESSION_COOKIE_SECURE = (
+        os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
+    )

@@ -2,31 +2,47 @@
 import os
 import hmac
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_user, logout_user, login_required, current_user
+from flask import (
+    Blueprint, render_template, request,
+    redirect, url_for, flash
+)
+
+from flask_login import (
+    login_user, logout_user,
+    login_required, current_user
+)
 
 from extensions import db
-from models import User, AuditLog
+from models import User
+from audit_utils import log_audit_event
+
 
 auth = Blueprint("auth", __name__)
 
 
-# Save security activity in audit_logs
+# COMMON SECURITY AUDIT FUNCTION WITH SHA-256
 def log_security_event(user, action, outcome, details):
 
-    event = AuditLog(
-        actor_id=user.id if user else None,
-        document_id=None,
-        action=action,
-        outcome=outcome,
-        details=details
-    )
+    try:
 
-    db.session.add(event)
-    db.session.commit()
+        log_audit_event(
+            actor_id=user.id if user else None,
+            document_id=None,
+            action=action,
+            outcome=outcome,
+            details=details
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        raise
 
 
-# Registration Route
+# REGISTRATION ROUTE
 @auth.route("/register", methods=["GET", "POST"])
 def register():
 
@@ -38,38 +54,69 @@ def register():
         confirm_password = request.form.get("confirm_password", "")
 
         if not name or not email or not password or not confirm_password:
+
             flash("Please fill all fields.", "error")
 
         elif password != confirm_password:
+
             flash("Passwords do not match.", "error")
 
         elif len(password) < 8:
-            flash("Password must contain at least 8 characters.", "error")
+
+            flash(
+                "Password must contain at least 8 characters.",
+                "error"
+            )
 
         elif User.query.filter_by(email=email).first():
-            flash("Email already exists. Please use another email.", "error")
+
+            flash(
+                "Email already exists. Please use another email.",
+                "error"
+            )
 
         else:
 
-            new_user = User(
-                name=name,
-                email=email,
-                role="VIEWER"
-            )
+            try:
 
-            new_user.set_password(password)
+                new_user = User(
+                    name=name,
+                    email=email,
+                    role="VIEWER"
+                )
 
-            db.session.add(new_user)
-            db.session.commit()
+                new_user.set_password(password)
 
-            flash("Registration successful! Please login.", "success")
+                db.session.add(new_user)
+                db.session.commit()
 
-            return redirect(url_for("auth.login"))
+                log_security_event(
+                    new_user,
+                    "USER_REGISTERED",
+                    "SUCCESS",
+                    f"New VIEWER account registered: {email}."
+                )
+
+                flash(
+                    "Registration successful! Please login.",
+                    "success"
+                )
+
+                return redirect(url_for("auth.login"))
+
+            except Exception:
+
+                db.session.rollback()
+
+                flash(
+                    "Registration failed. Please try again.",
+                    "error"
+                )
 
     return render_template("register.html")
 
 
-# Login Route
+# LOGIN ROUTE
 @auth.route("/login", methods=["GET", "POST"])
 def login():
 
@@ -78,27 +125,44 @@ def login():
 
     if request.method == "POST":
 
-        email = request.form.get("email", "").strip().lower()
+        email = request.form.get(
+            "email", ""
+        ).strip().lower()
+
         password = request.form.get("password", "")
-        login_type = request.form.get("login_type", "viewer").strip().lower()
+
+        login_type = request.form.get(
+            "login_type", "viewer"
+        ).strip().lower()
+
         admin_code = request.form.get("admin_code", "")
 
         user = User.query.filter_by(email=email).first()
 
-        # Normalize database role
-        user_role = (user.role or "").strip().lower() if user else ""
+        user_role = (
+            (user.role or "").strip().lower()
+            if user else ""
+        )
 
-        # Check credentials
-        if not user or not user.is_active or not user.check_password(password):
+        # CHECK LOGIN CREDENTIALS
+        if (
+            not user
+            or not user.is_active
+            or not user.check_password(password)
+        ):
 
-            if login_type == "admin":
+            action = (
+                "ADMIN_LOGIN_ATTEMPT"
+                if login_type == "admin"
+                else "LOGIN_ATTEMPT"
+            )
 
-                log_security_event(
-                    user,
-                    "ADMIN_LOGIN_ATTEMPT",
-                    "DENIED",
-                    "Admin login attempt failed because credentials were invalid."
-                )
+            log_security_event(
+                user,
+                action,
+                "DENIED",
+                f"Failed {login_type.upper()} login attempt for {email}."
+            )
 
             flash("Invalid email or password.", "error")
 
@@ -107,14 +171,19 @@ def login():
         # ADMIN LOGIN
         if login_type == "admin":
 
-            saved_code = os.getenv("ADMIN_SECURITY_CODE", "")
+            saved_code = os.getenv(
+                "ADMIN_SECURITY_CODE", ""
+            )
 
             code_correct = (
                 bool(saved_code)
-                and hmac.compare_digest(admin_code, saved_code)
+                and hmac.compare_digest(
+                    admin_code,
+                    saved_code
+                )
             )
 
-            # Only actual ADMIN accounts can access Admin Dashboard
+            # ONLY DATABASE ADMIN CAN ACCESS ADMIN DASHBOARD
             if user_role != "admin":
 
                 log_security_event(
@@ -133,7 +202,7 @@ def login():
 
                 return render_template("login.html")
 
-            # Verify Admin security code
+            # VERIFY ADMIN SECURITY CODE
             if not code_correct:
 
                 log_security_event(
@@ -143,11 +212,14 @@ def login():
                     "Admin account entered an incorrect security code."
                 )
 
-                flash("Incorrect Admin Security Code.", "error")
+                flash(
+                    "Incorrect Admin Security Code.",
+                    "error"
+                )
 
                 return render_template("login.html")
 
-            # Successful Admin login
+            # SUCCESSFUL ADMIN LOGIN
             log_security_event(
                 user,
                 "ADMIN_LOGIN",
@@ -161,11 +233,18 @@ def login():
 
             return redirect(url_for("dashboard"))
 
-        # VIEWER LOGIN
+        # VIEWER / OWNER LOGIN
         elif login_type == "viewer":
 
-            # Admin account cannot use Viewer login
+            # ADMIN MUST USE ADMIN LOGIN
             if user_role == "admin":
+
+                log_security_event(
+                    user,
+                    "UNAUTHORIZED_VIEWER_LOGIN",
+                    "DENIED",
+                    "ADMIN account attempted to use Viewer login."
+                )
 
                 flash(
                     "Please select Admin login for this account.",
@@ -174,11 +253,12 @@ def login():
 
                 return render_template("login.html")
 
+            # SUCCESSFUL USER LOGIN
             log_security_event(
                 user,
                 "VIEWER_LOGIN",
                 "SUCCESS",
-                "User logged in successfully."
+                f"{user.role} user logged in successfully."
             )
 
             login_user(user)
@@ -196,7 +276,7 @@ def login():
     return render_template("login.html")
 
 
-# Logout Route
+# LOGOUT ROUTE
 @auth.route("/logout")
 @login_required
 def logout():
@@ -210,6 +290,9 @@ def logout():
 
     logout_user()
 
-    flash("You have logged out successfully.", "success")
+    flash(
+        "You have logged out successfully.",
+        "success"
+    )
 
     return redirect(url_for("auth.login"))

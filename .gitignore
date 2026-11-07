@@ -12,12 +12,19 @@ env/
 # Environment secrets
 .env
 .env.*
+!.env.example
 
 # Private uploaded documents
 instance/private_documents/
 
 # Local database and logs
 *.log
+*.sqlite
+*.sqlite3
+*.db
+*.bak
+*.backup
+*.dump
 
 # IDE settings
 .vscode/
@@ -25,4 +32,6 @@ instance/private_documents/
 
 # Test cache
 .pytest_cache/
+
+# Refactoring temporary files
 .refact/

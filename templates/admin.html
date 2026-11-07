@@ -37,6 +37,10 @@
             margin-top: 0;
         }
 
+        h2, h3 {
+            color: #26344a;
+        }
+
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -71,12 +75,14 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
+            min-width: 650px;
         }
 
         th, td {
             padding: 13px;
             text-align: left;
             border-bottom: 1px solid #ddd;
+            overflow-wrap: anywhere;
         }
 
         th {
@@ -135,6 +141,38 @@
             background: #fff0f0;
             color: #c62828;
         }
+
+        .section-description {
+            color: #667085;
+            font-size: 14px;
+        }
+
+        .audit-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .audit-count {
+            background: #edf4ff;
+            color: #1765d1;
+            padding: 8px 13px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .header, .table-box, .stats-box {
+                padding: 16px;
+            }
+        }
     </style>
 </head>
 
@@ -142,6 +180,7 @@
 
 <div class="container">
 
+    <!-- Header -->
     <div class="header">
         <h1>TrustVault Admin Dashboard</h1>
         <p>Security Monitoring and User Management</p>
@@ -191,7 +230,9 @@
     <div class="table-box">
 
         <h2>User Management</h2>
-        <p>View registered users and promote VIEWER accounts to OWNER.</p>
+        <p class="section-description">
+            View registered users and promote VIEWER accounts to OWNER.
+        </p>
 
         <table>
             <thead>
@@ -305,6 +346,76 @@
 
     </div>
 
+    <!-- Complete Audit Trail -->
+    <div class="table-box">
+
+        <div class="audit-heading">
+            <h2>Complete Audit Trail</h2>
+
+            <span class="audit-count">
+                Recent {{ audit_logs|length }} Activities
+            </span>
+        </div>
+
+        <p class="section-description">
+            Track document activities, permission changes and security events.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Log ID</th>
+                    <th>User ID</th>
+                    <th>Document ID</th>
+                    <th>Activity</th>
+                    <th>Outcome</th>
+                    <th>Details</th>
+                    <th>Date & Time</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for log in audit_logs %}
+
+                <tr>
+                    <td>{{ log.id }}</td>
+
+                    <td>{{ log.actor_id or 'Unknown' }}</td>
+
+                    <td>{{ log.document_id or 'N/A' }}</td>
+
+                    <td>{{ log.action }}</td>
+
+                    <td>
+                        {% if log.outcome|upper == 'DENIED' %}
+                            <span class="denied">{{ log.outcome }}</span>
+                        {% else %}
+                            <span class="success">{{ log.outcome }}</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ log.details or 'No details available' }}</td>
+
+                    <td>{{ log.created_at or 'Not available' }}</td>
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="7" class="empty">
+                        No audit activities found yet.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+        </table>
+
+    </div>
+
+    <!-- Logout -->
     <a href="{{ url_for('auth.logout') }}" class="logout">
         Logout
     </a>

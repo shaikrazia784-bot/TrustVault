@@ -7,6 +7,8 @@
     <title>TrustVault Dashboard</title>
 
     <style>
+        * { box-sizing: border-box; }
+
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -17,12 +19,26 @@
         header {
             background: #172554;
             color: white;
-            padding: 20px 35px;
+            padding: 22px 35px;
         }
 
-        header h1 {
-            margin: 0;
+        header h1 { margin: 0; }
+
+        header p {
+            margin-bottom: 0;
+            color: #cbd5e1;
         }
+
+        .logout {
+            color: white;
+            text-decoration: none;
+            float: right;
+            background: #dc2626;
+            padding: 10px 18px;
+            border-radius: 6px;
+        }
+
+        .logout:hover { background: #b91c1c; }
 
         .container {
             padding: 30px;
@@ -33,9 +49,16 @@
         .welcome, .section {
             background: white;
             padding: 25px;
-            border-radius: 10px;
+            border-radius: 12px;
             margin-bottom: 22px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+        }
+
+        .welcome h2, .section h2 { color: #172554; }
+
+        .role {
+            font-weight: bold;
+            color: #1d4ed8;
         }
 
         .upload {
@@ -43,10 +66,15 @@
             text-align: center;
             padding: 35px;
             border-radius: 10px;
+            background: #f8fafc;
         }
 
-        .upload h3 {
-            color: #1d4ed8;
+        .upload h3 { color: #1d4ed8; }
+
+        input[type="file"] {
+            display: block;
+            margin: 20px auto;
+            max-width: 100%;
         }
 
         button {
@@ -56,28 +84,152 @@
             padding: 12px 22px;
             border-radius: 6px;
             cursor: pointer;
+            font-size: 15px;
         }
 
-        button:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
+        button:hover { background: #1e40af; }
+
+        .replace-btn {
+            background: #0f766e;
+            margin-top: 5px;
         }
 
-        .logout {
+        .replace-btn:hover { background: #115e59; }
+
+        .edit-btn { background: #7c3aed; }
+        .edit-btn:hover { background: #6d28d9; }
+
+        .revoke-btn {
+            background: #dc2626;
+            margin-top: 8px;
+        }
+
+        .revoke-btn:hover { background: #b91c1c; }
+
+        .message {
+            padding: 13px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .error, .danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+        }
+
+        .document-item {
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: #fafcff;
+        }
+
+        .document-item strong { color: #1e40af; }
+
+        .empty {
+            color: #64748b;
+            padding: 15px;
+        }
+
+        .permission {
+            background: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: #1d4ed8;
             color: white;
+            padding: 10px 16px;
             text-decoration: none;
-            float: right;
+            border-radius: 6px;
+            margin-bottom: 12px;
         }
 
-        .role {
-            font-weight: bold;
-            color: #1d4ed8;
+        .download-btn:hover { background: #1e40af; }
+
+        .replace-form {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 12px;
         }
+
+        .replace-form p {
+            margin-top: 0;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        .version-info {
+            color: #475569;
+            font-size: 14px;
+        }
+
+        .share-form {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .share-form label {
+            display: block;
+            margin-top: 14px;
+            margin-bottom: 7px;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        .share-form select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: white;
+            font-size: 15px;
+        }
+
+        .share-form button { margin-top: 18px; }
+
+        .permission-card {
+            border: 1px solid #e2e8f0;
+            background: #fafcff;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+
+        .permission-card p { margin: 8px 0; }
 
         footer {
             text-align: center;
-            padding: 20px;
+            padding: 22px;
             color: #64748b;
+        }
+
+        @media(max-width: 600px) {
+            header { padding: 20px; }
+            .container { padding: 15px; }
+            .welcome, .section { padding: 18px; }
+            .logout { padding: 8px 12px; }
         }
     </style>
 </head>
@@ -92,53 +244,304 @@
 
 <div class="container">
 
+    <!-- WELCOME -->
+
     <div class="welcome">
         <h2>Welcome, {{ user.name }} 👋</h2>
         <p>Email: {{ user.email }}</p>
-        <p>Your Role: <span class="role">{{ user.role }}</span></p>
+        <p>Your Role: <span class="role">{{ user.role|upper }}</span></p>
     </div>
 
-    {% if user.role|lower == 'owner' %}
+    <!-- FLASH MESSAGES -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="message {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <!-- OWNER DASHBOARD -->
+
+    {% if user.role|upper == 'OWNER' %}
 
         <div class="section">
-            <h2>Owner Document Management</h2>
+            <h2>👑 Owner Document Management</h2>
             <p>Upload and securely manage your personal documents.</p>
 
             <div class="upload">
-                <h3>Upload Your Documents</h3>
-                <p>PDF, DOCX, JPG, PNG</p>
+                <h3>📁 Upload Your Documents</h3>
+                <p>Allowed formats: PDF, DOCX, JPG, JPEG, PNG</p>
 
-                <button type="button" disabled>
-                    Upload Feature Coming Next
-                </button>
+                <form action="{{ url_for('owner.upload_document') }}"
+                      method="POST"
+                      enctype="multipart/form-data">
+
+                    <input type="file" name="document"
+                           accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+
+                    <button type="submit">Upload Document</button>
+                </form>
             </div>
         </div>
 
+        <!-- MY DOCUMENTS -->
+
         <div class="section">
-            <h2>My Documents</h2>
-            <p>Your uploaded documents will appear here.</p>
+            <h2>📂 My Documents</h2>
+
+            {% if my_documents %}
+                {% for document in my_documents %}
+                    <div class="document-item">
+
+                        <strong>{{ document.title }}</strong>
+
+                        <p>Uploaded: {{ document.created_at }}</p>
+
+                        <p>
+                            File Size:
+                            {{ (document.file_size / 1024)|round(2) }} KB
+                        </p>
+
+                        <a class="download-btn"
+                           href="{{ url_for('owner.download_document',
+                                            document_id=document.id) }}">
+                            Download Document
+                        </a>
+
+                        <form class="replace-form"
+                              action="{{ url_for('owner.replace_document',
+                                                 document_id=document.id) }}"
+                              method="POST"
+                              enctype="multipart/form-data">
+
+                            <p>🔄 Replace Document</p>
+
+                            <label>Select a new file to replace this document:</label>
+
+                            <input type="file" name="document"
+                                   accept=".pdf,.docx,.jpg,.jpeg,.png" required>
+
+                            <button type="submit" class="replace-btn">
+                                Replace Document
+                            </button>
+                        </form>
+
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty">No documents uploaded yet.</p>
+            {% endif %}
         </div>
 
+        <!-- SHARE AND REVOKE -->
+
         <div class="section">
-            <h2>Manage Shared Access</h2>
-            <p>Share your documents with VIEWER users using READ permission.</p>
+            <h2>🔐 Manage Shared Access</h2>
+
+            <p>Share your documents with authorized VIEWER users.</p>
+
+            <div class="permission">
+                <p><strong>Available Permissions:</strong></p>
+                <p>READ - View and download documents.</p>
+                <p>EDIT - Download, edit locally and upload a new version.</p>
+            </div>
+
+            <h3>Share a Document</h3>
+
+            {% if my_documents and viewers %}
+
+                <form class="share-form"
+                      action="{{ url_for('owner.share_document') }}"
+                      method="POST">
+
+                    <label>Select Document:</label>
+                    <select name="document_id" required>
+                        <option value="">Choose Document</option>
+
+                        {% for document in my_documents %}
+                            <option value="{{ document.id }}">
+                                {{ document.title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <label>Select Viewer:</label>
+                    <select name="user_id" required>
+                        <option value="">Choose Viewer</option>
+
+                        {% for viewer in viewers %}
+                            <option value="{{ viewer.id }}">
+                                {{ viewer.name }} - {{ viewer.email }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <label>Select Permission:</label>
+                    <select name="access_level" required>
+                        <option value="READ">READ - View and Download</option>
+                        <option value="EDIT">EDIT - Upload New Version</option>
+                    </select>
+
+                    <button type="submit">Share Document</button>
+                </form>
+
+            {% elif not my_documents %}
+                <p class="empty">Upload a document first before sharing.</p>
+            {% else %}
+                <p class="empty">No active VIEWER accounts are available.</p>
+            {% endif %}
+
+            <hr>
+
+            <h3>Current Shared Access</h3>
+
+            {% if shared_permissions %}
+
+                {% for permission in shared_permissions %}
+                    <div class="permission-card">
+
+                        <p>
+                            <strong>Document:</strong>
+                            {{ permission.document.title }}
+                        </p>
+
+                        <p>
+                            <strong>Viewer:</strong>
+                            {{ permission.user.name }}
+                        </p>
+
+                        <p>
+                            <strong>Email:</strong>
+                            {{ permission.user.email }}
+                        </p>
+
+                        <p>
+                            <strong>Permission:</strong>
+                            {{ permission.access_level|upper }}
+                        </p>
+
+                        <!-- Corrected revoke URL -->
+
+                        <form
+                            action="{{ url_for('owner.revoke_access',
+                                               permission_id=permission.id) }}"
+                            method="POST">
+
+                            <button type="submit" class="revoke-btn">
+                                Revoke Access
+                            </button>
+
+                        </form>
+
+                    </div>
+                {% endfor %}
+
+            {% else %}
+                <p class="empty">No active shared permissions yet.</p>
+            {% endif %}
+
         </div>
 
-    {% elif user.role|lower == 'viewer' %}
+    <!-- VIEWER DASHBOARD -->
+
+    {% elif user.role|upper == 'VIEWER' %}
 
         <div class="section">
-            <h2>My Shared Documents</h2>
-            <p>Documents shared with you will appear here.</p>
+            <h2>📄 My Shared Documents</h2>
 
-            <p><strong>Your access:</strong> READ and Download only.</p>
-            <p>You cannot upload, edit or delete documents.</p>
+            <p>
+                Documents shared with you by document owners
+                will appear here.
+            </p>
+
+            <div class="permission">
+                <strong>
+                    Your access depends on the permission granted by the OWNER.
+                </strong>
+
+                <p>READ: Download access only.</p>
+                <p>EDIT: Download, edit locally and upload a new version.</p>
+            </div>
+
+            {% if shared_documents %}
+
+                {% for permission in shared_documents %}
+                    <div class="document-item">
+
+                        <strong>{{ permission.document.title }}</strong>
+
+                        <p>
+                            Uploaded: {{ permission.document.created_at }}
+                        </p>
+
+                        <p>
+                            Your Permission:
+                            <strong>{{ permission.access_level|upper }}</strong>
+                        </p>
+
+                        <a class="download-btn"
+                           href="{{ url_for('owner.download_document',
+                                            document_id=permission.document.id) }}">
+                            Download Document
+                        </a>
+
+                        {% if permission.access_level|upper == 'EDIT' %}
+
+                            <div class="replace-form">
+                                <p>✏️ Upload Edited Version</p>
+
+                                <p class="version-info">
+                                    Step 1: Download the original document.
+                                    <br>
+                                    Step 2: Edit it on your computer.
+                                    <br>
+                                    Step 3: Upload your modified document below.
+                                </p>
+
+                                <form
+                                    action="{{ url_for('owner.upload_edited_version',
+                                                       document_id=permission.document.id) }}"
+                                    method="POST"
+                                    enctype="multipart/form-data">
+
+                                    <label>Select your edited document:</label>
+
+                                    <input type="file" name="document"
+                                           accept=".pdf,.docx,.jpg,.jpeg,.png"
+                                           required>
+
+                                    <button type="submit" class="edit-btn">
+                                        Upload Edited Version
+                                    </button>
+                                </form>
+                            </div>
+
+                        {% else %}
+
+                            <p class="info">
+                                You have READ and download access only.
+                                You cannot upload edited versions.
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+                {% endfor %}
+
+            {% else %}
+                <p class="empty">
+                    No documents have been shared with you yet.
+                </p>
+            {% endif %}
         </div>
 
     {% else %}
 
         <div class="section">
             <h2>Access Information</h2>
-            <p>Your account role does not have access to this dashboard.</p>
+            <div class="message error">
+                Your account role does not have access to this dashboard.
+            </div>
         </div>
 
     {% endif %}
@@ -146,7 +549,7 @@
 </div>
 
 <footer>
-    TrustVault © 2026 | Secure Document Management
+    TrustVault © 2026 | Secure Document Management System
 </footer>
 
 </body>

@@ -133,3 +133,35 @@ class AuditLog(db.Model):
         db.DateTime,
         server_default=db.func.current_timestamp()
     )
+# DOCUMENT VERSION MODEL
+class DocumentVersion(db.Model):
+    __tablename__ = "document_versions"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    document_id = db.Column(
+        db.Integer,
+        db.ForeignKey("documents.id"),
+        nullable=False
+    )
+
+    editor_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False
+    )
+
+    version_number = db.Column(db.Integer, nullable=False)
+
+    title = db.Column(db.String(200), nullable=False)
+    storage_key = db.Column(db.String(255), unique=True, nullable=False)
+    mime_type = db.Column(db.String(100), nullable=True)
+    file_size = db.Column(db.BigInteger, nullable=True)
+
+    created_at = db.Column(
+        db.DateTime,
+        server_default=db.func.current_timestamp()
+    )
+
+    document = db.relationship("Document")
+    editor = db.relationship("User")

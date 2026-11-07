@@ -4,25 +4,22 @@ from flask_login import login_required, current_user
 
 from extensions import db
 from models import AuditLog, User
+from audit_utils import log_audit_event
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
 
 
-# Check whether the logged-in user is ADMIN
 def is_admin():
-
     return (current_user.role or "").strip().lower() == "admin"
 
 
-# Admin Dashboard
 @admin.route("/")
 @login_required
 def dashboard():
 
-    # Only ADMIN can access Admin Dashboard
     if not is_admin():
 
-        event = AuditLog(
+        log_audit_event(
             actor_id=current_user.id,
             document_id=None,
             action="UNAUTHORIZED_ADMIN_ACCESS",
@@ -33,35 +30,31 @@ def dashboard():
             )
         )
 
-        db.session.add(event)
         db.session.commit()
-
         abort(403)
 
-    # Fetch security alerts
     security_alerts = AuditLog.query.filter(
         AuditLog.outcome == "DENIED"
     ).order_by(
         AuditLog.id.desc()
     ).limit(100).all()
 
-    # Fetch registered users
+    audit_logs = AuditLog.query.order_by(
+        AuditLog.id.desc()
+    ).limit(200).all()
+
     users = User.query.order_by(User.id.desc()).all()
 
-    # Count all users
     total_users = User.query.count()
 
-    # Count ADMIN users
     total_admins = User.query.filter(
         db.func.lower(User.role) == "admin"
     ).count()
 
-    # Count OWNER users
     total_owners = User.query.filter(
         db.func.lower(User.role) == "owner"
     ).count()
 
-    # Count VIEWER users
     total_viewers = User.query.filter(
         db.func.lower(User.role) == "viewer"
     ).count()
@@ -69,6 +62,7 @@ def dashboard():
     return render_template(
         "admin.html",
         security_alerts=security_alerts,
+        audit_logs=audit_logs,
         users=users,
         total_users=total_users,
         total_admins=total_admins,
@@ -77,15 +71,13 @@ def dashboard():
     )
 
 
-# Promote VIEWER to OWNER
 @admin.route("/promote/<int:user_id>", methods=["POST"])
 @login_required
 def promote_owner(user_id):
 
-    # Only ADMIN can promote users
     if not is_admin():
 
-        event = AuditLog(
+        log_audit_event(
             actor_id=current_user.id,
             document_id=None,
             action="UNAUTHORIZED_OWNER_PROMOTION",
@@ -96,32 +88,27 @@ def promote_owner(user_id):
             )
         )
 
-        db.session.add(event)
         db.session.commit()
-
         abort(403)
 
-    # Find selected user
     user = db.session.get(User, user_id)
 
     if not user:
-
         flash("User not found.", "error")
         return redirect(url_for("admin.dashboard"))
 
-    # Only VIEWER can be promoted
     user_role = (user.role or "").strip().lower()
 
     if user_role != "viewer":
-
-        flash("Only VIEWER accounts can be promoted to OWNER.", "error")
+        flash(
+            "Only VIEWER accounts can be promoted to OWNER.",
+            "error"
+        )
         return redirect(url_for("admin.dashboard"))
 
-    # Change role to OWNER
     user.role = "OWNER"
 
-    # Record promotion in audit logs
-    event = AuditLog(
+    log_audit_event(
         actor_id=current_user.id,
         document_id=None,
         action="OWNER_PROMOTION",
@@ -132,9 +119,11 @@ def promote_owner(user_id):
         )
     )
 
-    db.session.add(event)
     db.session.commit()
 
-    flash(f"{user.name} has been promoted to OWNER successfully!", "success")
+    flash(
+        f"{user.name} has been promoted to OWNER successfully!",
+        "success"
+    )
 
     return redirect(url_for("admin.dashboard"))
