@@ -9,13 +9,15 @@ on:
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Send request to TrustVault
         run: |
           curl --fail --silent --show-error \
-            --retry 3 \
-            --retry-delay 15 \
-            --retry-all-errors \
+            --connect-timeout 20 \
             --max-time 120 \
+            --retry 1 \
+            --retry-delay 10 \
+            --retry-all-errors \
             https://trustvault-df6q.onrender.com/
