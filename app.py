@@ -11,8 +11,10 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    # Initialize database
     db.init_app(app)
 
+    # Initialize login manager
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
 
@@ -44,8 +46,8 @@ def create_app():
     def home():
         return render_template("index.html")
 
-    # Health Check (does not depend on database)
-    @app.route("/health")
+    # Health Check - Does not depend on database
+    @app.route("/health", methods=["GET"])
     def health_check():
         return "TrustVault is Healthy!", 200
 
@@ -76,14 +78,14 @@ def create_app():
         )
 
     # Database Connection Check
-    @app.route("/db-check")
+    @app.route("/db-check", methods=["GET"])
     def database_check():
 
         try:
             with db.engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
 
-            return "TrustVault Database Connected Successfully!"
+            return "TrustVault Database Connected Successfully!", 200
 
         except Exception:
             app.logger.exception("Database connection failed")
