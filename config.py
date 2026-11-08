@@ -18,16 +18,27 @@ class Config:
         database=os.getenv("DB_NAME")
     )
 
+    # TiDB SSL certificate configuration
+    ssl_ca = os.getenv("DB_SSL_CA")
+
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 1800,
+        "pool_timeout": 30,
+        "pool_size": 5,
+        "max_overflow": 2,
+        "connect_args": {
+            "ssl": {"ca": ssl_ca}
+        } if ssl_ca else {}
+    }
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Maximum uploaded file size: 10 MB
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024
 
-    # Session security
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
 
-    # Enable only when HTTPS is configured in production
     SESSION_COOKIE_SECURE = (
         os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
     )
