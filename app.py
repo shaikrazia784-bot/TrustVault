@@ -44,6 +44,11 @@ def create_app():
     def home():
         return render_template("index.html")
 
+    # Health Check (does not depend on database)
+    @app.route("/health")
+    def health_check():
+        return "TrustVault is Healthy!", 200
+
     # Role Based Dashboard
     @app.route("/dashboard")
     @login_required
