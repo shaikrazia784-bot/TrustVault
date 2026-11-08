@@ -1,0 +1,21 @@
+
+name: Keep TrustVault Awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send request to TrustVault
+        run: |
+          curl --fail --silent --show-error \
+            --retry 3 \
+            --retry-delay 15 \
+            --retry-all-errors \
+            --max-time 120 \
+            https://trustvault-df6q.onrender.com/
