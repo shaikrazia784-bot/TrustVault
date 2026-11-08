@@ -16,27 +16,30 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
 
-    # Import all models
+    # Import models
     from models import User, DocumentVersion
 
-    # Import Blueprints and dashboard data function
+    # Import Blueprints
     from auth.routes import auth
     from admin.routes import admin
     from owner.routes import owner, inject_dashboard_data
 
+    # Load logged-in user
     @login_manager.user_loader
     def load_user(user_id):
-        return db.session.get(User, int(user_id))
+        try:
+            return db.session.get(User, int(user_id))
+        except Exception:
+            app.logger.exception("Failed to load user from database")
+            db.session.rollback()
+            return None
 
     # Register Blueprints
     app.register_blueprint(auth)
     app.register_blueprint(admin)
     app.register_blueprint(owner)
 
-    # Create only missing database tables
-    with app.app_context():
-        db.create_all()
-
+    # Home page
     @app.route("/")
     def home():
         return render_template("index.html")
@@ -79,6 +82,7 @@ def create_app():
 
         except Exception:
             app.logger.exception("Database connection failed")
+            db.session.rollback()
             return "Database connection failed!", 500
 
     return app
